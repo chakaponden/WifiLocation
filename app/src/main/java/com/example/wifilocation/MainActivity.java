@@ -109,7 +109,6 @@ public class MainActivity extends AppCompatActivity
                 permissions, 1);
 
         backendHelper = new WiFiBackendHelper(this, this);
-        onOpen();
         buttonUpdate = (Button) findViewById(R.id.button_update);
         buttonUpdate.setOnClickListener( new View.OnClickListener() {
 
@@ -118,6 +117,7 @@ public class MainActivity extends AppCompatActivity
                 backendHelper.onUpdate();
             }
         });
+        buttonUpdate.setEnabled(false);
         textViewAltitude = (TextView) findViewById(R.id.textView_altitude_value);
         textViewLongitude = (TextView) findViewById(R.id.textView_longitude_value);
         textViewLatitude = (TextView) findViewById(R.id.textView_latitude_value);
@@ -208,5 +208,12 @@ public class MainActivity extends AppCompatActivity
     public void onRequestPermissionsResult(int requestCode,
                                            String[] permissions, int[] grantResults)
     {
+        for(int grantResult : grantResults)
+        {
+            if(grantResult != PackageManager.PERMISSION_GRANTED)
+                return;
+        }
+        onOpen();
+        buttonUpdate.setEnabled(true);
     }
 }
