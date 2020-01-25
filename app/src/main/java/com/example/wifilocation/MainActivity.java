@@ -201,6 +201,10 @@ public class MainActivity extends AppCompatActivity
                 textViewLatitude.setText(loc != null ? String.valueOf(loc.getLatitude()) : "unknown");
             }
         });
+        if(loc == null)
+        {
+            backendHelper.onUpdate();
+        }
     }
 
 
