@@ -1,0 +1,63 @@
+From 26a52289b2759f2b459389c224e508278958d93e Mon Sep 17 00:00:00 2001
+From: Den <motometalor@gmail.com>
+Date: Tue, 13 Aug 2019 15:42:41 +0300
+Subject: [PATCH 4/4] Add dummy network location listener - have to be replaced
+ by custom service in the future
+
+---
+ .../android/location/LocationManager.java     | 25 +++++++++++++++++++
+ 1 file changed, 25 insertions(+)
+
+diff --git a/location/java/android/location/LocationManager.java b/location/java/android/location/LocationManager.java
+index 968f596e0cc..729fa209688 100644
+--- a/location/java/android/location/LocationManager.java
++++ b/location/java/android/location/LocationManager.java
+@@ -63,6 +63,7 @@ public class LocationManager {
+ 
+     private final Context mContext;
+     private final ILocationManager mService;
++    private final LocationListener mNetworkListener;
+     private final GnssMeasurementCallbackTransport mGnssMeasurementCallbackTransport;
+     private final GnssNavigationMessageCallbackTransport mGnssNavigationMessageCallbackTransport;
+     private final BatchedLocationCallbackTransport mBatchedLocationCallbackTransport;
+@@ -322,6 +323,24 @@ public class LocationManager {
+     public LocationManager(Context context, ILocationManager service) {
+         mService = service;
+         mContext = context;
++        mNetworkListener = new LocationListener() {
++            @Override
++            public void onLocationChanged(Location location) {
++                Log.d(TAG,  "update location: " + location.toString());
++            }
++
++            @Override
++            public void onStatusChanged(String provider, int status, Bundle extras) {
++            }
++
++            @Override
++            public void onProviderEnabled(String provider) {
++            }
++
++            @Override
++            public void onProviderDisabled(String provider) {
++            }
++        };
+         mGnssMeasurementCallbackTransport =
+                 new GnssMeasurementCallbackTransport(mContext, mService);
+         mGnssNavigationMessageCallbackTransport =
+@@ -329,6 +348,12 @@ public class LocationManager {
+         mBatchedLocationCallbackTransport =
+                 new BatchedLocationCallbackTransport(mContext, mService);
+ 
++        try {
++                requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 60 * 1000, 5, mNetworkListener);
++        } catch (Exception e) {
++            Log.e(TAG,  "exception: " + e.toString());
++        }
++
+     }
+ 
+     private LocationProvider createProvider(String name, ProviderProperties properties) {
+-- 
+2.17.1
+

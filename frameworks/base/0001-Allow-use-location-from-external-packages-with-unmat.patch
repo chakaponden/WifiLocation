@@ -1,0 +1,28 @@
+From a56f37c48c1e013f286c2d51541cfe741d2fd2bd Mon Sep 17 00:00:00 2001
+From: Den <motometalor@gmail.com>
+Date: Sat, 10 Aug 2019 13:36:45 +0300
+Subject: [PATCH 1/4] Allow use location from external packages with unmatched
+ signatures
+
+Change-Id: I0eec507a256a2dae226b48a0dbe4e8601becfb32
+---
+ services/core/java/com/android/server/ServiceWatcher.java | 3 +--
+ 1 file changed, 1 insertion(+), 2 deletions(-)
+
+diff --git a/services/core/java/com/android/server/ServiceWatcher.java b/services/core/java/com/android/server/ServiceWatcher.java
+index 2ff036be4b4..9141db2d542 100644
+--- a/services/core/java/com/android/server/ServiceWatcher.java
++++ b/services/core/java/com/android/server/ServiceWatcher.java
+@@ -92,8 +92,7 @@ public class ServiceWatcher implements ServiceConnection {
+             String pkg = initialPackageNames.get(i);
+             try {
+                 HashSet<Signature> set = new HashSet<Signature>();
+-                Signature[] sigs = pm.getPackageInfo(pkg, PackageManager.MATCH_SYSTEM_ONLY
+-                        | PackageManager.GET_SIGNATURES).signatures;
++                Signature[] sigs = pm.getPackageInfo(pkg, PackageManager.GET_SIGNATURES).signatures;
+                 set.addAll(Arrays.asList(sigs));
+                 sigSets.add(set);
+             } catch (NameNotFoundException e) {
+-- 
+2.17.1
+

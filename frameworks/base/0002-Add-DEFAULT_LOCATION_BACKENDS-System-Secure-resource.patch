@@ -1,0 +1,123 @@
+From 5544dee6057a4dd94e89b81c052670aa2863871e Mon Sep 17 00:00:00 2001
+From: Den <motometalor@gmail.com>
+Date: Sat, 10 Aug 2019 14:57:06 +0300
+Subject: [PATCH 2/4] Add DEFAULT_LOCATION_BACKENDS System Secure resource
+
+---
+ core/java/android/provider/Settings.java      |  6 +++
+ core/proto/android/providers/settings.proto   |  1 +
+ .../android/provider/SettingsBackupTest.java  |  3 +-
+ .../SettingsProvider/res/values/defaults.xml  |  2 +
+ .../settings/SettingsProtoDumpUtil.java       |  3 ++
+ .../providers/settings/SettingsProvider.java  | 20 +++++++-
+ 7 files changed, 84 insertions(+), 2 deletions(-)
+
+diff --git a/core/java/android/provider/Settings.java b/core/java/android/provider/Settings.java
+index 2d8ed7adab5..0aae70efb1f 100755
+--- a/core/java/android/provider/Settings.java
++++ b/core/java/android/provider/Settings.java
+@@ -7065,6 +7065,12 @@ public final class Settings {
+          */
+         public static final String QS_AUTO_ADDED_TILES = "qs_auto_tiles";
+ 
++        /**
++         * Default of the location to use for backend.
++         * @hide
++         */
++        public static final String DEFAULT_LOCATION_BACKENDS = "default_location_backends";
++
+         /**
+          * This are the settings to be backed up.
+          *
+diff --git a/core/proto/android/providers/settings.proto b/core/proto/android/providers/settings.proto
+index fa645f4d4c6..19ee16d2248 100644
+--- a/core/proto/android/providers/settings.proto
++++ b/core/proto/android/providers/settings.proto
+@@ -507,6 +507,7 @@ message SecureSettingsProto {
+     SettingProto instant_apps_enabled = 166;
+     SettingProto device_paired = 167;
+     SettingProto notification_badging = 168;
++    SettingProto default_location_backends = 169;
+ }
+ 
+ message SystemSettingsProto {
+diff --git a/core/tests/coretests/src/android/provider/SettingsBackupTest.java b/core/tests/coretests/src/android/provider/SettingsBackupTest.java
+index a979ac82daf..7cf06a24509 100644
+--- a/core/tests/coretests/src/android/provider/SettingsBackupTest.java
++++ b/core/tests/coretests/src/android/provider/SettingsBackupTest.java
+@@ -493,7 +493,8 @@ public class SettingsBackupTest {
+                  Settings.Secure.USER_SETUP_COMPLETE,
+                  Settings.Secure.VOICE_INTERACTION_SERVICE,
+                  Settings.Secure.VOICE_RECOGNITION_SERVICE,
+-                 Settings.Secure.INSTANT_APPS_ENABLED);
++                 Settings.Secure.INSTANT_APPS_ENABLED,
++                 Settings.Secure.DEFAULT_LOCATION_BACKENDS);
+ 
+     @Test
+     public void systemSettingsBackedUpOrBlacklisted() {
+diff --git a/packages/SettingsProvider/res/values/defaults.xml b/packages/SettingsProvider/res/values/defaults.xml
+index e9dadc5fbf1..ac245bf1be3 100644
+--- a/packages/SettingsProvider/res/values/defaults.xml
++++ b/packages/SettingsProvider/res/values/defaults.xml
+@@ -187,4 +187,6 @@
+ 
+     <!--  default setting for Settings.System.END_BUTTON_BEHAVIOR : END_BUTTON_BEHAVIOR_SLEEP -->
+     <integer name="def_end_button_behavior">0x2</integer>
++    <!-- default setting for Settings.Secure.DEFAULT_LOCATION_BACKENDS -->
++    <string name="default_location_backends" translatable="false"></string>
+ </resources>
+diff --git a/packages/SettingsProvider/src/com/android/providers/settings/SettingsProtoDumpUtil.java b/packages/SettingsProvider/src/com/android/providers/settings/SettingsProtoDumpUtil.java
+index 819ee3ee57f..30d234e51cc 100644
+--- a/packages/SettingsProvider/src/com/android/providers/settings/SettingsProtoDumpUtil.java
++++ b/packages/SettingsProvider/src/com/android/providers/settings/SettingsProtoDumpUtil.java
+@@ -1446,6 +1446,9 @@ class SettingsProtoDumpUtil {
+         dumpSetting(s, p,
+                 Settings.Secure.NOTIFICATION_BADGING,
+                 SecureSettingsProto.NOTIFICATION_BADGING);
++        dumpSetting(s, p,
++                Settings.Secure.DEFAULT_LOCATION_BACKENDS,
++                SecureSettingsProto.DEFAULT_LOCATION_BACKENDS);
+     }
+ 
+     private static void dumpProtoSystemSettingsLocked(
+diff --git a/packages/SettingsProvider/src/com/android/providers/settings/SettingsProvider.java b/packages/SettingsProvider/src/com/android/providers/settings/SettingsProvider.java
+index ad2ec0b9013..3fe8653b557 100644
+--- a/packages/SettingsProvider/src/com/android/providers/settings/SettingsProvider.java
++++ b/packages/SettingsProvider/src/com/android/providers/settings/SettingsProvider.java
+@@ -2895,7 +2895,7 @@ public class SettingsProvider extends ContentProvider {
+         }
+ 
+         private final class UpgradeController {
+-            private static final int SETTINGS_VERSION = 145;
++            private static final int SETTINGS_VERSION = 146;
+ 
+             private final int mUserId;
+ 
+@@ -3496,6 +3496,24 @@ public class SettingsProvider extends ContentProvider {
+                     currentVersion = 145;
+                 }
+ 
++                if (currentVersion == 145) {
++                    // Version 149: Set the default value for DEFAULT_LOCATION_BACKENDS.
++                    final SettingsState secureSettings = getSecureSettingsLocked(userId);
++                    final Setting currentSetting = secureSettings
++                            .getSettingLocked(Settings.Secure.DEFAULT_LOCATION_BACKENDS);
++                    if (currentSetting.isNull()) {
++                        final String defaultValue = getContext().getResources().getString(
++                                R.string.default_location_backends);
++                        if (defaultValue != null) {
++                            Slog.d(LOG_TAG, "Setting [" + defaultValue + "] as Location Backends "
++                                    + "for user " + userId);
++                            secureSettings.insertSettingLocked(Settings.Secure.DEFAULT_LOCATION_BACKENDS,
++                                    defaultValue, null, true, SettingsState.SYSTEM_PACKAGE_NAME);
++                        }
++                    }
++                    currentVersion = 146;
++                }
++
+                 // vXXX: Add new settings above this point.
+ 
+                 if (currentVersion != newVersion) {
+-- 
+2.17.1
+

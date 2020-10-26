@@ -1,0 +1,66 @@
+From 7ed2e64216f14cf2fc1a4f1d2ae292faf364432e Mon Sep 17 00:00:00 2001
+From: Den <motometalor@gmail.com>
+Date: Wed, 14 Aug 2019 00:29:22 +0300
+Subject: [PATCH 1/2] Prevent user from changing Wi-Fi state
+
+---
+ .../settings/widget/MasterSwitchPreference.java | 17 ++++++++++++++---
+ .../WifiMasterSwitchPreferenceController.java   |  2 ++
+ 2 files changed, 16 insertions(+), 3 deletions(-)
+
+diff --git a/src/com/android/settings/widget/MasterSwitchPreference.java b/src/com/android/settings/widget/MasterSwitchPreference.java
+index 29bc17bce5..99749bc533 100644
+--- a/src/com/android/settings/widget/MasterSwitchPreference.java
++++ b/src/com/android/settings/widget/MasterSwitchPreference.java
+@@ -37,6 +37,7 @@ public class MasterSwitchPreference extends TwoTargetPreference {
+     private Switch mSwitch;
+     private boolean mChecked;
+     private boolean mEnableSwitch = true;
++    private boolean mBlocked = false;
+ 
+     public MasterSwitchPreference(Context context, AttributeSet attrs,
+             int defStyleAttr, int defStyleRes) {
+@@ -101,9 +102,11 @@ public class MasterSwitchPreference extends TwoTargetPreference {
+     }
+ 
+     public void setSwitchEnabled(boolean enabled) {
+-        mEnableSwitch = enabled;
+-        if (mSwitch != null) {
+-            mSwitch.setEnabled(enabled);
++        if(!mBlocked) {
++            mEnableSwitch = enabled;
++            if (mSwitch != null) {
++                mSwitch.setEnabled(enabled);
++            }
+         }
+     }
+ 
+@@ -118,4 +121,12 @@ public class MasterSwitchPreference extends TwoTargetPreference {
+     public Switch getSwitch() {
+         return mSwitch;
+     }
++
++    public void setSwitchBlocked(boolean blocked) {
++        mBlocked = blocked;
++    }
++
++    public boolean getSwitchBlocked() {
++        return mBlocked;
++    }
+ }
+diff --git a/src/com/android/settings/wifi/WifiMasterSwitchPreferenceController.java b/src/com/android/settings/wifi/WifiMasterSwitchPreferenceController.java
+index bc61cff0ea..f29660e9d9 100644
+--- a/src/com/android/settings/wifi/WifiMasterSwitchPreferenceController.java
++++ b/src/com/android/settings/wifi/WifiMasterSwitchPreferenceController.java
+@@ -51,6 +51,8 @@ public class WifiMasterSwitchPreferenceController extends PreferenceController
+     public void displayPreference(PreferenceScreen screen) {
+         super.displayPreference(screen);
+         mWifiPreference = (MasterSwitchPreference) screen.findPreference(KEY_TOGGLE_WIFI);
++        mWifiPreference.setSwitchEnabled(false);
++        mWifiPreference.setSwitchBlocked(true);
+     }
+ 
+     @Override
+-- 
+2.17.1
+
